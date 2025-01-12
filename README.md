@@ -80,14 +80,14 @@ class MyCustomProcessor(ItemProcessor):
 You can pass custom Scrapy settings to `ScrapyRunner`:
 
 ```python
-settings = {
+scrapy_settings = {
     "LOG_LEVEL": "DEBUG",
     "USER_AGENT": "MyCustomAgent",
     # Add more custom settings as needed
 }
 
-runner = ScrapyRunner(spider=MySpider, settings=settings)
-runner.run(start_urls=["https://example.org"])
+runner = ScrapyRunner(spider=MySpider, processor=MyProcessor, scrapy_settings=scrapy_settings)
+runner.run(start_urls=["https://example.org", "https://scrapy.org"])
 ```
 
 ## License

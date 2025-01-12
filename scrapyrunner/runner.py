@@ -2,11 +2,11 @@ import logging
 from typing import Any, ParamSpec, TypeVar
 
 from scrapy import Item, Spider, signals
-from scrapy.crawler import CrawlerProcess, Settings
+from scrapy.crawler import CrawlerProcess
 from scrapy.signalmanager import dispatcher
 from twisted.internet.threads import deferToThread
 
-from .processor import ItemProcessor, Processor
+from .processor import Processor
 from .queue import ScrapingQueue
 
 T = TypeVar("T", bound=Item)
@@ -90,38 +90,32 @@ class ScrapyRunner:
     def __init__(
         self,
         spider: type[Spider],
+        processor: type[Processor[Item]],
         queue: ScrapingQueue[Item] | None = None,
-        processor: type[Processor[Item]] | None = None,
-        settings: dict[str, Any] | Settings | None = None,
+        scrapy_settings: dict[str, Any] | None = None,
     ) -> None:
         """
         Initializes the ScrapyRunner.
 
         Args:
             spider (type[Spider]): The Scrapy spider class to run.
+            processor (type[Processor[Item]]): The processor class to handle queue items.
             queue (ScrapingQueue[Item], optional): The queue to store scraped items.
                 Defaults to a new instance of ScrapingQueue.
-            processor (type[Processor[Item]], optional): The processor class to handle
-                queue items. Defaults to `ItemProcessor`.
-            settings (dict[str, Any] | Settings, optional): Custom Scrapy settings.
+            scrapy_settings (dict[str, Any], optional): Custom Scrapy settings.
                 Defaults to basic settings with log level set to "INFO".
         """
         self.spider = spider
         self.queue = queue if queue is not None else ScrapingQueue[Item]()
-        self.processor = (
-            processor(queue=self.queue)
-            if processor is not None
-            else ItemProcessor[Item](queue=self.queue)
-        )
+        self.processor = processor(queue=self.queue)
+        self.signals = Signals(queue=self.queue)
         self.crawler = CrawlerProcess(
-            settings=settings
-            if settings is not None
-            else {
+            settings={
                 "LOG_LEVEL": "INFO",
                 "TELNETCONSOLE_ENABLED": False,
-            }
+                **(scrapy_settings or {}),
+            },
         )
-        self.signals = Signals(queue=self.queue)
 
     def run(self, *args, **kwargs) -> None:
         """Runs the Scrapy crawler and starts processing items in the queue.
