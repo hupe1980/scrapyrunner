@@ -117,7 +117,7 @@ class ScrapyRunner:
             },
         )
 
-    def run(self, *args, **kwargs) -> None:
+    def run(self, *args: P.args, **kwargs: P.kwargs) -> None:
         """Runs the Scrapy crawler and starts processing items in the queue.
 
         Args:
