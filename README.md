@@ -43,13 +43,13 @@ class MySpider(scrapy.Spider):
 # Define a custom Item Processor
 class MyProcessor(ItemProcessor):
     def process_item(self, item: scrapy.Item) -> None:
-        sleep(2)  # Simulate a delay for processing
         print(">>>", item, "<<<")
+        sleep(2)  # Simulate a delay for processing
 
 if __name__ == '__main__':
     # Create an instance of ScrapyRunner with the spider and processor
     scrapy_runner = ScrapyRunner(spider=MySpider, processor=MyProcessor)
-    scrapy_runner.run(start_urls=["https://example.org"])  # Start scraping
+    scrapy_runner.run(start_urls=["https://example.org", "https://scrapy.org"])  # Start scraping
 ```
 
 ### How it works:

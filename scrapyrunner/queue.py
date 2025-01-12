@@ -9,11 +9,6 @@ T = TypeVar("T", bound=Item)
 logger = logging.getLogger(__name__)
 
 
-class QueueClosedError(Exception):
-    """Custom exception raised when an operation is attempted on a closed queue."""
-    pass
-
-
 class ScrapingQueue(Queue, Generic[T]):
     """A specialized queue for handling batches of Scrapy items.
 
@@ -48,34 +43,24 @@ class ScrapingQueue(Queue, Generic[T]):
 
         Yields:
             list[T]: A batch of items from the queue.
-
-        Raises:
-            QueueClosedError: If the queue is closed while attempting to retrieve items.
         """
         batch: list[T] = []
-        while True:
-            if len(batch) == self.batch_size:
-                yield batch
-                batch = []
-
+        while not self._is_closed or not self.empty():
             try:
-                if self.is_closed:
-                    raise QueueClosedError("Queue is closed")
-
                 # Retrieve an item with a timeout
                 item: T = self.get(timeout=self.read_timeout)
                 batch.append(item)
                 self.task_done()
+                if len(batch) == self.batch_size:
+                    yield batch
+                    batch = []
             except Empty:
                 # If queue is empty, yield any remaining items in the batch
                 if batch:
                     yield batch
                     batch = []
-            except QueueClosedError:
-                logger.info("Queue is closed, stopping...")
-                if batch:
-                    yield batch
-                break
+            if batch:
+                yield batch
 
     def stream(self) -> Iterator[list[T]]:
         """Streams batches of items from the queue.

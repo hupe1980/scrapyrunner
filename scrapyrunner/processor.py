@@ -58,7 +58,6 @@ class ItemProcessor(Processor[T]):
         """
         try:
             for batch in self.queue.get_batches():
-                logger.info(f"Processing batch of {len(batch)} items.")
                 self.process_batch(batch)
         except Exception as e:
             logger.error("Error processing items from the queue", exc_info=e)
@@ -75,6 +74,7 @@ class ItemProcessor(Processor[T]):
         Args:
             batch (list[T]): A list of items to process.
         """
+        logger.info(f"Processing batch of {len(batch)} items.")
         for item in batch:
             self.process_item(item)
 

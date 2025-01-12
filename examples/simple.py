@@ -21,8 +21,8 @@ class MyProcessor(ItemProcessor):
     def process_item(self, item: scrapy.Item) -> None:
         # A simulated delay is added here to mimic real processing time.
         # In a real-world scenario, this could be a time-consuming task like data validation or saving to a database.
-        sleep(2)  # Sleep for 2 seconds to simulate processing time
         print(">>>", item, "<<<")  # Print the processed item to the console
+        sleep(2)  # Sleep for 2 seconds to simulate processing time
 
 # Main block to execute the spider and processor
 if __name__ == '__main__':
@@ -32,4 +32,4 @@ if __name__ == '__main__':
 
     # Run the Scrapy crawler, passing the starting URL to the spider
     # The spider will start scraping the provided URL and the processor will handle the items.
-    scrapy_runner.run(start_urls=["https://example.org"])  # Run the spider with the start URL
+    scrapy_runner.run(start_urls=["https://example.org", "https://scrapy.org"])  # Run the spider with the start URL
