@@ -140,3 +140,4 @@ class ScrapyRunner:
                 self.crawler.start(stop_after_crawl=True)
         except Exception as e:
             logger.error("Error running the crawler", exc_info=e)
+            raise e

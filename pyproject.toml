@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scrapyrunner"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Python library to run Scrapy spiders directly from your code."
 authors = ["hupe1980"]
 license = "MIT"
