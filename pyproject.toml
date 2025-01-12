@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "scrapyrunner"
+version = "0.0.1"
+description = "A Python library to run Scrapy spiders directly from your code."
+authors = ["hupe1980"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/hupe1980/scrapyrunner"
+repository = "https://github.com/hupe1980/scrapyrunner"
+keywords = ["scrapy", "scraping", "web scraping", "scrapy wrapper"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: Scrapy"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+scrapy = "^2.12.0"
+twisted = "^24.11.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+ruff = "^0.9.1"
+mypy = "^1.14.1"
+pytest-mock = "^3.14.0"
+
+[tool.ruff]
+# Same as Black.
+line-length = 120
+
+lint.select = [
+    "E",  # pycodestyle errors (settings from FastAPI, thanks, @tiangolo!)
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+lint.ignore = [
+    "E501",  # line too long, handled by black
+    "C901",  # too complex
+]
+
+[tool.ruff.lint.isort]
+order-by-type = true
+relative-imports-order = "closest-to-furthest"
+extra-standard-library = ["typing"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = []
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
