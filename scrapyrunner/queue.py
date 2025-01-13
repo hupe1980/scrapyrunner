@@ -1,45 +1,38 @@
-import logging
+from dataclasses import dataclass, field
 from queue import Empty, Queue
 from typing import Generic, Iterator, TypeVar
 
-from scrapy import Item
+T = TypeVar("T")
 
-T = TypeVar("T", bound=Item)
-
-logger = logging.getLogger(__name__)
-
-
+@dataclass
 class ScrapingQueue(Queue, Generic[T]):
     """A specialized queue for handling batches of Scrapy items.
 
-    This queue supports batch processing, streaming, and closing operations.
-    It extends the standard Python `Queue` and adds functionality tailored for
-    web scraping workflows.
+    This queue extends the standard Python `Queue` and adds functionality for
+    batch processing, streaming, and gracefully closing operations. It supports
+    item retrieval with a timeout and batching items for efficient processing.
     """
+    maxsize: int = 0  # The maximum number of items the queue can hold (0 means unlimited size).
+    batch_size: int = 10  # The size of batches returned by `get_batches`, default is 10.
+    read_timeout: float = 1.0  # Timeout for reading from the queue, default is 1.0 seconds.
+    
+    _is_closed: bool = field(default=False, init=False)  # Flag to indicate if the queue is closed.
 
-    def __init__(self, maxsize: int = 0, batch_size: int = 10, read_timeout: float = 1.0) -> None:
-        """
-        Initializes the ScrapingQueue.
+    def __post_init__(self):
+        """Initializes the Queue class with the specified maxsize.
 
-        Args:
-            maxsize (int, optional): The maximum number of items the queue can hold.
-                Defaults to 0, which means unlimited size.
-            batch_size (int, optional): The size of batches returned by `get_batches`.
-                Defaults to 10.
-            read_timeout (float, optional): Timeout in seconds for reading from the queue.
-                Defaults to 1.0.
+        This method is called after the dataclass initialization. It ensures
+        that the parent Queue class is initialized with the given `maxsize`.
         """
-        super().__init__(maxsize)
-        self.batch_size = batch_size
-        self.read_timeout = read_timeout
-        self._is_closed = False
+        super().__init__(self.maxsize)
 
     def get_batches(self) -> Iterator[list[T]]:
         """Generates batches of items from the queue.
 
-        This method continuously retrieves items from the queue and yields them in
-        batches of size `batch_size`. It stops when the queue is closed or no more
-        items are available.
+        This method continuously retrieves items from the queue and yields them
+        in batches of size `batch_size`. It stops when the queue is closed or
+        no more items are available. The method handles the timeout for reading
+        from the queue and yields any remaining items when the queue is empty.
 
         Yields:
             list[T]: A batch of items from the queue.
@@ -55,7 +48,7 @@ class ScrapingQueue(Queue, Generic[T]):
                     yield batch
                     batch = []
             except Empty:
-                # If queue is empty, yield any remaining items in the batch
+                # If the queue is empty, yield any remaining items in the batch
                 if batch:
                     yield batch
                     batch = []
@@ -65,8 +58,9 @@ class ScrapingQueue(Queue, Generic[T]):
     def stream(self) -> Iterator[list[T]]:
         """Streams batches of items from the queue.
 
-        This method wraps `get_batches` and handles `GeneratorExit` to gracefully close
-        the queue when the generator is stopped by the caller.
+        This method wraps the `get_batches` method and gracefully handles the
+        `GeneratorExit` exception to close the queue when the generator is
+        stopped by the caller.
 
         Yields:
             list[T]: A batch of items from the queue.
@@ -79,8 +73,9 @@ class ScrapingQueue(Queue, Generic[T]):
     def close(self) -> None:
         """Closes the queue, preventing further item retrieval.
 
-        Once closed, any attempt to get an item from the queue will raise
-        `QueueClosedError`. Existing items in the queue can still be processed.
+        Once the queue is closed, any attempt to retrieve an item will raise
+        a `QueueClosedError`. The method sets the `_is_closed` flag to True
+        and ensures no more items can be added or retrieved from the queue.
         """
         self._is_closed = True
 

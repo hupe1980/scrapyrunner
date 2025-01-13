@@ -1,4 +1,5 @@
 # Importing necessary libraries
+from dataclasses import dataclass  # Used to create data classes for the processor
 from time import sleep  # Used to simulate a delay during item processing
 
 import scrapy  # Scrapy library for creating spiders
@@ -17,18 +18,22 @@ class MySpider(scrapy.Spider):
         return {"title": data}  # Returning the extracted title in a dictionary format
 
 # Define the item processor to process the items after they are scraped
+@dataclass(kw_only=True)
 class MyProcessor(ItemProcessor):
+    prefix: str
+    suffix: str
+
     def process_item(self, item: scrapy.Item) -> None:
         # A simulated delay is added here to mimic real processing time.
         # In a real-world scenario, this could be a time-consuming task like data validation or saving to a database.
-        print(">>>", item, "<<<")  # Print the processed item to the console
+        print(self.prefix, item, self.suffix)  # Print the processed item to the console
         sleep(2)  # Sleep for 2 seconds to simulate processing time
 
 # Main block to execute the spider and processor
 if __name__ == '__main__':
     # Create an instance of ScrapyRunner with the specified spider and processor.
     # ScrapyRunner will handle crawling and managing the queue for items.
-    scrapy_runner = ScrapyRunner(spider=MySpider, processor=MyProcessor)
+    scrapy_runner = ScrapyRunner(spider=MySpider, processor=MyProcessor, processor_kwargs={"prefix": ">>>", "suffix": "<<<"})
 
     # Run the Scrapy crawler, passing the starting URL to the spider
     # The spider will start scraping the provided URL and the processor will handle the items.

@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Generic, TypeVar, override
 
 from scrapy import Item
@@ -10,51 +11,57 @@ T = TypeVar("T", bound=Item)
 
 logger = logging.getLogger(__name__)
 
+@dataclass(kw_only=True)
 class Processor(ABC, Generic[T]):
-    """Abstract base class for processors that handle Scrapy items.
-
-    Subclasses should implement the `process` method to define how items
-    are processed in the queue.
     """
+    Abstract base class for processors that handle Scrapy items.
 
-    def __init__(self, queue: ScrapingQueue[T]) -> None:
-        """Initializes the processor with a ScrapingQueue.
-
-        Args:
-            queue (ScrapingQueue[T]): The queue that holds the items to process.
-        """
-        self._queue = queue
+    Subclasses of `Processor` must implement the `process` method to define how
+    items are processed in the queue. This class provides a base structure for
+    creating custom processors for batch or item-level processing.
+    
+    Attributes:
+        queue (ScrapingQueue[T]): The queue that holds the items to be processed.
+    """
+    queue: ScrapingQueue[T]
 
     @abstractmethod
     def process(self) -> None:
-        """Processes the items in the queue.
-        This method must be implemented by subclasses to define processing logic.
+        """
+        Processes the items in the queue.
+
+        This method must be implemented by subclasses to define specific processing logic,
+        such as item manipulation, validation, or other operations.
         """
         pass
 
-    @property
-    def queue(self) -> ScrapingQueue[T]:
-        """Returns the queue that the processor is working with.
 
-        Returns:
-            ScrapingQueue[T]: The queue of items to be processed.
-        """
-        return self._queue
-
-
+@dataclass(kw_only=True)
 class ItemProcessor(Processor[T]):
-    """Concrete implementation of Processor for processing items.
+    """
+    Concrete implementation of the `Processor` for processing items.
 
-    This class processes batches of items from the queue and can be customized
-    by overriding `process_item` for item-specific logic.
+    This class retrieves batches of items from the queue and processes each batch by
+    calling the `process_batch` method. It also provides a default implementation
+    for processing individual items via `process_item`. Subclasses can override
+    `process_item` for custom item-specific logic.
+
+    Attributes:
+        queue (ScrapingQueue[T]): The queue that holds the items to be processed.
     """
 
     @override
     def process(self) -> None:
-        """Processes batches of items from the queue.
+        """
+        Processes batches of items from the queue.
 
-        This method retrieves batches of items from the queue and processes
-        each batch by passing items to the `process_batch` method.
+        This method continuously retrieves batches of items from the queue and processes
+        each batch by calling the `process_batch` method. It also handles any exceptions
+        that may occur during the processing, logging errors, and ensures the queue is closed
+        after processing completes.
+
+        Raises:
+            Exception: If an error occurs during item processing, the exception is logged and raised again.
         """
         try:
             for batch in self.queue.get_batches():
@@ -66,10 +73,12 @@ class ItemProcessor(Processor[T]):
             self.queue.close()
 
     def process_batch(self, batch: list[T]) -> None:
-        """Processes a batch of items.
+        """
+        Processes a batch of items.
 
-        This method is called for each batch of items and processes each item
-        using the `process_item` method.
+        This method is called for each batch of items. By default, it processes each
+        item in the batch by calling the `process_item` method, but it can be customized
+        by subclasses to implement batch-specific logic.
 
         Args:
             batch (list[T]): A list of items to process.
@@ -79,12 +88,15 @@ class ItemProcessor(Processor[T]):
             self.process_item(item)
 
     def process_item(self, item: T) -> None:
-        """Processes an individual item.
+        """
+        Processes an individual item.
 
-        This method can be overridden by subclasses to define custom item processing.
+        This method provides a default implementation that simply prints the item.
+        Subclasses can override this method to implement custom processing logic, such as
+        validation, manipulation, or transformation of the item.
 
         Args:
             item (T): The item to process.
         """
-        # Default implementation: just print the item
+        # Default implementation: prints the item to the console
         print(item)
