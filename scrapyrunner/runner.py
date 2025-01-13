@@ -24,7 +24,7 @@ class Signals:
     Scrapy crawler and closing the associated queue when necessary.
     """
     queue: ScrapingQueue[Item]
-    
+
     _stopping: bool = field(default=False, init=False)
     _crawler: CrawlerProcess | None = field(default=None, init=False)
 

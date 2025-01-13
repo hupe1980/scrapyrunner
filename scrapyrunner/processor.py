@@ -19,7 +19,7 @@ class Processor(ABC, Generic[T]):
     Subclasses of `Processor` must implement the `process` method to define how
     items are processed in the queue. This class provides a base structure for
     creating custom processors for batch or item-level processing.
-    
+
     Attributes:
         queue (ScrapingQueue[T]): The queue that holds the items to be processed.
     """

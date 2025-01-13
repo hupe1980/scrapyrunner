@@ -15,7 +15,7 @@ class ScrapingQueue(Queue, Generic[T]):
     maxsize: int = 0  # The maximum number of items the queue can hold (0 means unlimited size).
     batch_size: int = 10  # The size of batches returned by `get_batches`, default is 10.
     read_timeout: float = 1.0  # Timeout for reading from the queue, default is 1.0 seconds.
-    
+
     _is_closed: bool = field(default=False, init=False)  # Flag to indicate if the queue is closed.
 
     def __post_init__(self):
