@@ -2,7 +2,9 @@ from dataclasses import dataclass, field
 from queue import Empty, Queue
 from typing import Generic, Iterator, TypeVar
 
-T = TypeVar("T")
+from scrapy import Item
+
+T = TypeVar("T", bound=Item)
 
 @dataclass
 class ScrapingQueue(Queue, Generic[T]):
@@ -52,8 +54,8 @@ class ScrapingQueue(Queue, Generic[T]):
                 if batch:
                     yield batch
                     batch = []
-            if batch:
-                yield batch
+        if batch:
+            yield batch
 
     def stream(self) -> Iterator[list[T]]:
         """Streams batches of items from the queue.
