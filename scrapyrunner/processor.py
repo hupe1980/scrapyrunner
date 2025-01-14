@@ -37,7 +37,7 @@ class Processor(ABC, Generic[T]):
 
 
 @dataclass(kw_only=True)
-class ItemProcessor(Processor[T]):
+class ItemProcessor(Processor[Item]):
     """
     Concrete implementation of the `Processor` for processing items.
 
@@ -72,7 +72,7 @@ class ItemProcessor(Processor[T]):
         finally:
             self.queue.close()
 
-    def process_batch(self, batch: list[T]) -> None:
+    def process_batch(self, batch: list[Item]) -> None:
         """
         Processes a batch of items.
 
@@ -87,7 +87,7 @@ class ItemProcessor(Processor[T]):
         for item in batch:
             self.process_item(item)
 
-    def process_item(self, item: T) -> None:
+    def process_item(self, item: Item) -> None:
         """
         Processes an individual item.
 
