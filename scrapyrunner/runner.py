@@ -6,6 +6,7 @@ from scrapy import Item, Spider, signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.signalmanager import dispatcher
 from twisted.internet.threads import deferToThread
+from twisted.python.failure import Failure
 
 from .processor import Processor
 from .queue import ScrapingQueue
@@ -40,7 +41,7 @@ class Signals:
         if not self.queue.is_closed:
             self.queue.put(item)
         else:
-            self._stop_crawler("Queue is closed, stopping")
+            self.stop_crawler("Queue is closed, stopping")
 
     def on_engine_stopped(self) -> None:
         """Callback triggered when the Scrapy engine stops.
@@ -53,7 +54,7 @@ class Signals:
             self._crawler.stop()
         self.queue.close()
 
-    def _stop_crawler(self, message: str) -> None:
+    def stop_crawler(self, message: str) -> None:
         """Stops the crawler with a log message.
 
         This method will log a message and ensure the crawler is stopped if it
@@ -145,7 +146,8 @@ class ScrapyRunner:
             **kwargs: Keyword arguments to pass to the spider.
         """
         # Start item processing asynchronously in a separate thread
-        deferToThread(self._processor_instance.process)
+        d = deferToThread(self._processor_instance.process)
+        d.addErrback(self._handle_processing_error)
 
         try:
             logger.info("Starting Scrapy crawler")
@@ -155,3 +157,9 @@ class ScrapyRunner:
         except Exception as e:
             logger.error("Error running the crawler", exc_info=e)
             raise e
+
+    def _handle_processing_error(self, failure: Failure) -> None:
+        """Handles errors raised during item processing."""
+        logger.error("Error during item processing", exc_info=failure)
+        self._signals.stop_crawler("Error during item processing, stopping crawler")
+        failure.raiseException()
