@@ -87,6 +87,7 @@ To create your own custom processor:
 3. Process each item as needed (e.g., save to a database, perform additional transformations, etc.).
 
 ```python
+@dataclass(kw_only=True)
 class MyCustomProcessor(ItemProcessor):
     def process_item(self, item: scrapy.Item) -> None:
         # Custom processing logic goes here

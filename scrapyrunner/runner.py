@@ -5,6 +5,7 @@ from typing import Any, ParamSpec, Self, TypeVar
 from scrapy import Item, Spider, signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.signalmanager import dispatcher
+from twisted.internet import reactor
 from twisted.internet.threads import deferToThread
 from twisted.python.failure import Failure
 
@@ -52,6 +53,7 @@ class Signals:
         self._stopping = True
         if self._crawler:
             self._crawler.stop()
+        logger.info("Scrapy engine stopped.")
         self.queue.close()
 
     def stop_crawler(self, message: str) -> None:
@@ -147,19 +149,26 @@ class ScrapyRunner:
         """
         # Start item processing asynchronously in a separate thread
         d = deferToThread(self._processor_instance.process)
-        d.addErrback(self._handle_processing_error)
+        d.addCallback(self._on_processing_finished)
+        d.addErrback(self._on_processing_error)
 
         try:
             logger.info("Starting Scrapy crawler")
             with self._signals(self._crawler):
                 self._crawler.crawl(self.spider, *args, **kwargs)
-                self._crawler.start(stop_after_crawl=True)
+                self._crawler.start(stop_after_crawl=False)
         except Exception as e:
             logger.error("Error running the crawler", exc_info=e)
             raise e
 
-    def _handle_processing_error(self, failure: Failure) -> None:
-        """Handles errors raised during item processing."""
-        logger.error("Error during item processing", exc_info=failure)
-        self._signals.stop_crawler("Error during item processing, stopping crawler")
+    def _on_processing_finished(self, result: Any) -> None:
+        """Callback for successful completion of item processing."""
+        logger.info("Item processing completed successfully.")
+        reactor.stop() # type: ignore[attr-defined]
+
+    def _on_processing_error(self, failure: Failure) -> None:
+        """Callback for errors during item processing."""
+        logger.error("Error occurred during item processing.", exc_info=failure)
+        self._signals.stop_crawler("Stopping crawler due to processing error.")
+        reactor.stop() # type: ignore[attr-defined]
         failure.raiseException()
